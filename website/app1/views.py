@@ -6,10 +6,8 @@ from .models import Student,Course_Taken
 
 
 from django.http import HttpResponse
-
 def index(request):
-    return HttpResponse("Hello from Dockerized Django!")
-
+    return render(request, 'index.html')
 
 def add_student(request):
 	if request.method == 'POST':
