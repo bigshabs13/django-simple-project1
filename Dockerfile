@@ -1,19 +1,20 @@
 FROM python:3.11-slim
 
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
+# Install build tools and MariaDB headers (used by mysqlclient)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    default-libmysqlclient-dev pkg-config gcc libc6-dev \
-    && rm -rf /var/lib/apt/lists/*
+    build-essential libmariadb-dev pkg-config \
+ && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt /app/
-RUN pip install --upgrade pip
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.txt ./
+RUN python -m pip install --upgrade pip \
+ && pip install --no-cache-dir -r requirements.txt
 
-COPY . /app/
+COPY . ./
 
 EXPOSE 8000
 CMD ["python", "website/manage.py", "runserver", "0.0.0.0:8000"]
