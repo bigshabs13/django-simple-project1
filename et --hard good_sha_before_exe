@@ -1,0 +1,9 @@
+[33mf40bfde[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m Remove minikube.exe from repo and ignore it
+[33mc63f164[m Remove minikube.exe from repo and ignore it
+[33m0a7c0a9[m 'new'
+[33mabf4bb6[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m 'new'
+[33ma0dd24f[m Update project with latest changes
+[33m8549e18[m Update project with latest changes
+[33m0eea4b0[m Update project with latest changes
+[33m4506d47[m Add Dockerfile for Jenkins build
+[33m97c850a[m Initial commit
