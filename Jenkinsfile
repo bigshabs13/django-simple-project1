@@ -1,9 +1,7 @@
 pipeline {
   agent any
-
   environment {
-    // Add Python 3.13 paths for Jenkins service
-    PATH = "C:\\Users\\user\\AppData\\Local\\Programs\\Python\\Python313;C:\\Users\\user\\AppData\\Local\\Programs\\Python\\Python313\\Scripts;${env.PATH}"
+    IMAGE_NAME = 'django-simple'
   }
 
   stages {
@@ -13,35 +11,27 @@ pipeline {
       }
     }
 
-    stage('Verify Python') {
+    stage('Build Image in Minikube') {
       steps {
-        bat 'python --version'
-        bat 'pip --version'
+        bat '''
+          echo Setting Docker environment to Minikube
+          minikube -p minikube docker-env --shell cmd > docker_env.bat
+          call docker_env.bat
+
+          echo Building Docker image inside Minikube...
+          docker build -t django-simple:latest .
+        '''
       }
     }
 
-    stage('Install Dependencies') {
+    stage('Deploy to Kubernetes') {
       steps {
-        bat 'python -m pip install --upgrade pip'
-        bat 'python -m pip install -r requirements.txt'
-      }
-    }
-
-    stage('Run Migrations') {
-      steps {
-        dir('website') { // ✅ change directory to where manage.py actually is
-          bat 'python manage.py makemigrations'
-          bat 'python manage.py migrate'
-        }
-      }
-    }
-
-    stage('Run Django App (optional)') {
-      when { expression { return false } } // prevents Jenkins from hanging forever
-      steps {
-        dir('website') {
-          bat 'python manage.py runserver 0.0.0.0:8000'
-        }
+        bat '''
+          echo Updating Kubernetes deployment...
+          kubectl set image deployment/django-deployment django=django-simple:latest
+          kubectl rollout restart deployment/django-deployment
+          kubectl rollout status deployment/django-deployment
+        '''
       }
     }
   }
