@@ -2,6 +2,7 @@ pipeline {
   agent any
 
   environment {
+    // Add Python 3.13 paths for Jenkins service
     PATH = "C:\\Users\\user\\AppData\\Local\\Programs\\Python\\Python313;C:\\Users\\user\\AppData\\Local\\Programs\\Python\\Python313\\Scripts;${env.PATH}"
   }
 
@@ -26,9 +27,21 @@ pipeline {
       }
     }
 
-    stage('Run App') {
+    stage('Run Migrations') {
       steps {
-        bat 'python manage.py runserver'
+        dir('website') { // ✅ change directory to where manage.py actually is
+          bat 'python manage.py makemigrations'
+          bat 'python manage.py migrate'
+        }
+      }
+    }
+
+    stage('Run Django App (optional)') {
+      when { expression { return false } } // prevents Jenkins from hanging forever
+      steps {
+        dir('website') {
+          bat 'python manage.py runserver 0.0.0.0:8000'
+        }
       }
     }
   }
