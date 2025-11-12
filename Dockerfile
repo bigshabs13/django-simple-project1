@@ -14,7 +14,10 @@ COPY requirements.txt ./
 RUN python -m pip install --upgrade pip \
  && pip install --no-cache-dir -r requirements.txt
 
-COPY . ./
+# ✅ Only copy your actual Django project folder
+COPY website/ .
 
 EXPOSE 8000
-CMD ["python", "website/manage.py", "runserver", "0.0.0.0:8000"]
+
+# ✅ Run manage.py directly (it's now in /app after COPY)
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
