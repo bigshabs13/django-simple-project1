@@ -6,15 +6,15 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: django-app
+      app: django
   template:
     metadata:
       labels:
-        app: django-app
+        app: django
     spec:
       containers:
-      - name: django-container
-        image: mydjangoapp:latest
-        imagePullPolicy: Never
-        ports:
-        - containerPort: 8000
+        - name: django
+          image: django-simple:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8000
