@@ -1,14 +1,9 @@
 pipeline {
   agent any
   environment {
-    REGISTRY   = 'docker.io'
-    IMAGE_NAME = 'serj12/django-simple'
-    SHORT_SHA  = "${env.GIT_COMMIT?.take(7) ?: 'dev'}"
-    TAG        = "${SHORT_SHA}"
+    IMAGE_NAME = 'django-simple'
   }
-  triggers {
-    githubPush()    // 🔥 auto-builds whenever you push to GitHub
-  }
+
   stages {
     stage('Checkout') {
       steps {
@@ -16,30 +11,27 @@ pipeline {
       }
     }
 
-    stage('Build Image') {
+    stage('Build Image in Minikube') {
       steps {
-        bat "docker build -t %REGISTRY%/%IMAGE_NAME%:%TAG% ."
-      }
-    }
+        bat '''
+          echo Setting Docker environment to Minikube
+          minikube -p minikube docker-env --shell cmd > docker_env.bat
+          call docker_env.bat
 
-    stage('Push Image') {
-      steps {
-        withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-          bat """
-            echo %PASS% | docker login %REGISTRY% -u %USER% --password-stdin
-            docker push %REGISTRY%/%IMAGE_NAME%:%TAG%
-            docker logout %REGISTRY%
-          """
-        }
+          echo Building Docker image inside Minikube...
+          docker build -t django-simple:latest .
+        '''
       }
     }
 
     stage('Deploy to Kubernetes') {
       steps {
-        bat """
-          kubectl set image deployment/django-deployment django=%REGISTRY%/%IMAGE_NAME%:%TAG%
+        bat '''
+          echo Updating Kubernetes deployment...
+          kubectl set image deployment/django-deployment django=django-simple:latest
+          kubectl rollout restart deployment/django-deployment
           kubectl rollout status deployment/django-deployment
-        """
+        '''
       }
     }
   }
