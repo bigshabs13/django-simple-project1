@@ -5,8 +5,11 @@ from .forms import CreateStudentForm,CreateCourseForm,GPAForm
 from .models import Student,Course_Taken
 
 
+from django.http import HttpResponse
+
 def index(request):
-	return render(request,'index.html')
+    return HttpResponse("Hello from Dockerized Django!")
+
 
 def add_student(request):
 	if request.method == 'POST':
