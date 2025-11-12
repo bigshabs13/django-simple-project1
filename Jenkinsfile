@@ -1,11 +1,14 @@
 pipeline {
   agent any
-
   environment {
-    // Add Python 3.13 paths for Jenkins service
-    PATH = "C:\\Users\\user\\AppData\\Local\\Programs\\Python\\Python313;C:\\Users\\user\\AppData\\Local\\Programs\\Python\\Python313\\Scripts;${env.PATH}"
+    REGISTRY   = 'docker.io'
+    IMAGE_NAME = 'serj12/django-simple'
+    SHORT_SHA  = "${env.GIT_COMMIT?.take(7) ?: 'dev'}"
+    TAG        = "${SHORT_SHA}"
   }
-
+  triggers {
+    githubPush()    // 🔥 auto-builds whenever you push to GitHub
+  }
   stages {
     stage('Checkout') {
       steps {
@@ -13,35 +16,30 @@ pipeline {
       }
     }
 
-    stage('Verify Python') {
+    stage('Build Image') {
       steps {
-        bat 'python --version'
-        bat 'pip --version'
+        bat "docker build -t %REGISTRY%/%IMAGE_NAME%:%TAG% ."
       }
     }
 
-    stage('Install Dependencies') {
+    stage('Push Image') {
       steps {
-        bat 'python -m pip install --upgrade pip'
-        bat 'python -m pip install -r requirements.txt'
-      }
-    }
-
-    stage('Run Migrations') {
-      steps {
-        dir('website') { // ✅ change directory to where manage.py actually is
-          bat 'python manage.py makemigrations'
-          bat 'python manage.py migrate'
+        withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+          bat """
+            echo %PASS% | docker login %REGISTRY% -u %USER% --password-stdin
+            docker push %REGISTRY%/%IMAGE_NAME%:%TAG%
+            docker logout %REGISTRY%
+          """
         }
       }
     }
 
-    stage('Run Django App (optional)') {
-      when { expression { return false } } // prevents Jenkins from hanging forever
+    stage('Deploy to Kubernetes') {
       steps {
-        dir('website') {
-          bat 'python manage.py runserver 0.0.0.0:8000'
-        }
+        bat """
+          kubectl set image deployment/django-deployment django=%REGISTRY%/%IMAGE_NAME%:%TAG%
+          kubectl rollout status deployment/django-deployment
+        """
       }
     }
   }
